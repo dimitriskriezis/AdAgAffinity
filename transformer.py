@@ -18,7 +18,7 @@ class TransformerModel(nn.Module):
         encoder_layers = TransformerEncoderLayer(d_model, nhead, d_hid, dropout)
         self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
         self.embedding = nn.Embedding(ntoken, d_model)
-        self.d_model = d_model
+        self.d_model = d_model  
         self.linear = nn.Linear(d_model, ntoken)
 
         self.init_weights()
