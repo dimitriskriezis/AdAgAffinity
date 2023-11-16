@@ -50,7 +50,7 @@ def batchify(data: Tensor, bsz: int) -> Tensor:
 
 batch_size = 20
 eval_batch_size = 10
-train_data = batchify(train_data, batch_size)  # shape ``[seq_len, batch_size]``
+# train_data = batchify(train_data, batch_size)  # shape ``[seq_len, batch_size]``
 train_data = batchify(val_data, eval_batch_size)
 # print(len(train_data))
 test_data = batchify(test_data, eval_batch_size)
@@ -101,6 +101,7 @@ def train(model: nn.Module) -> None:
         data, targets = get_batch(train_data, i)
         output = model(data)
         output_flat = output.view(-1, ntokens)
+
         sys.exit()
         loss = criterion(output_flat, targets)
 

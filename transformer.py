@@ -20,7 +20,6 @@ class TransformerModel(nn.Module):
         self.embedding = nn.Embedding(ntoken, d_model)
         self.d_model = d_model  
         self.linear = nn.Linear(d_model, ntoken)
-
         self.init_weights()
 
     def init_weights(self) -> None:
