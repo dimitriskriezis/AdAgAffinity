@@ -2,6 +2,7 @@ import pandas as pd
 import sys
 import numpy as np
 from collections import defaultdict
+import random
 
 class Vocab:
     def __init__(self) -> None:
@@ -50,3 +51,34 @@ def preprocess():
     print(len(antibody_sequences), len(antigen_sequences))
 
     return vocab.vocab, antibody_sequences, antigen_sequences
+
+
+def generate_false_pairs(antibodies, antigens):    
+    false_abs = []
+    false_ads = []
+    for i in range(len(antibodies)-1):
+        false_abs.append(antibodies[i])
+        false_ads.append(antigens[i+1])
+    
+    return false_abs, false_ads
+
+def split_train_test(antibodies, antigens):
+    train_antibodies = antibodies[:int(0.8*len(antibodies))]
+    test_antibodies = antibodies[int(0.8*len(antibodies)):]
+    train_antigens = antigens[:int(0.8*len(antigens))]
+    test_antigens = antigens[int(0.8*len(antigens)):]
+
+    false_train_antibodies, false_train_antigens = generate_false_pairs(train_antibodies, train_antigens)
+    final_train_antibodies = train_antibodies + false_train_antibodies
+    final_train_antigens = train_antigens + false_train_antigens
+    
+    false_test_antibodies, false_test_antigens = generate_false_pairs(test_antibodies, test_antigens)
+    final_test_antibodies = test_antibodies + false_test_antibodies
+    final_test_antigens = test_antigens + false_test_antigens
+
+    train_labels = [1]*(len(train_antibodies)) + [-1]*len(false_train_antibodies)
+    test_labels = [1]*len(test_antibodies) + [-1]*len(false_test_antibodies)
+
+    print(len(train_labels), len(train_antibodies))
+    print(len(test_labels), len(test_antibodies))
+    return final_train_antibodies, final_train_antigens, train_labels, final_test_antibodies, final_test_antigens, test_labels

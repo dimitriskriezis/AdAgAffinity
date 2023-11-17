@@ -15,8 +15,10 @@ similarity is a numpy array of cosine similarities
 returns TPR, FPR, and ROC AUC
 """
 def eval(labels,similarity):
-    labels = labels*-1 + 1
-    similarity = abs(similarity)
+    labels = np.array(labels)
+    similarity = np.array(similarity)
+    # labels = labels*-1 + 1
+    # similarity = abs(similarity)
     auc = roc_auc_score(labels,similarity)
     fpr, tpr, thresh = metrics.roc_curve(labels,similarity)
     return fpr,tpr,auc
