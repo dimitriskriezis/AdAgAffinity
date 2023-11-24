@@ -34,7 +34,7 @@ class SiameseNetwork(nn.Module):
 
 
 
-vocab, antibodies, antigens  = preprocess()
+vocab, antibodies, antigens, all_antigen_names  = preprocess()
 print(vocab)
 ntokens = len(vocab)  # size of vocabulary
 emsize = 200  # embedding dimension
@@ -46,9 +46,9 @@ model = TransformerModel(ntokens, emsize, nhead, d_hid, nlayers, dropout)
 net = SiameseNetwork(ntokens, emsize, nhead, d_hid, nlayers, dropout)
 criterion = nn.CosineEmbeddingLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
-num_epochs = 10 
+num_epochs = 10
 # train the network
-train_antibodies, train_antigens, train_labels, test_antibodies, test_antigens, test_labels = split_train_test(antibodies, antigens)
+train_antibodies, train_antigens, train_labels, test_antibodies, test_antigens, test_labels = split_train_test(antibodies, antigens, all_antigen_names)
 counter = 0
 for epoch in tqdm(range(num_epochs)):
     for ab, ad, label in zip(train_antibodies, train_antigens, train_labels):
