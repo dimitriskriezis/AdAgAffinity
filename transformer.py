@@ -2,7 +2,7 @@ import math
 import os
 from tempfile import TemporaryDirectory
 from typing import Tuple
-
+import sys
 import torch
 from torch import nn, Tensor
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
@@ -39,6 +39,8 @@ class TransformerModel(nn.Module):
         """
         src = self.embedding(src) * math.sqrt(self.d_model)
         src = self.pos_encoder(src)
+        print(src)
+        sys.exit()
         output = self.transformer_encoder(src, src_mask)
         output = self.linear(output)
         return output

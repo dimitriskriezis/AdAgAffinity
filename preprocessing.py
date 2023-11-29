@@ -9,19 +9,19 @@ class Vocab:
         self.vocab = {}
         self.counter = 0
         self.frequency = defaultdict(lambda:0)
-    
+        self.abagseq = defaultdict(lambda:[])
+        self.abagname = defaultdict(lambda:[])
+        self.agnameseq = {}
+
     def make_embeddings(self, sequence):
         result = []
-        for aminoacid in sequence.split(" "):
+        for aminoacid in sequence:
             if not aminoacid:
                 continue
-            if len(aminoacid) != 3 and len(aminoacid) > 0:
-                return []
             if aminoacid not in self.vocab:
                 self.vocab[aminoacid] = self.counter
                 self.counter += 1
             result.append(self.vocab[aminoacid])
-            self.frequency[aminoacid]+=1
         return result
 
     def make_vocab(self, train_data):
@@ -30,71 +30,78 @@ class Vocab:
         antigen_names = []
         for index, pair in train_data.iterrows():
             sequence = []
+            ab = pair['antibody_chain']
+            ag = pair['antigen_chain']
+            antigen_name = pair['antigen_name']
+            if antigen_name not in self.abagname[ab]:
+                self.abagname[ab].append(antigen_name)
+            if ag not in self.abagseq[ab]:
+                self.abagseq[ab].append(ag)
             antibody_sequence = self.make_embeddings(pair['antibody_chain'])
             antigen_sequence = self.make_embeddings(pair['antigen_chain'])
-            if antibody_sequence and antigen_sequence:
-                antibodies.append(antibody_sequence)
-                antigens.append(antigen_sequence)
-                antigen_names.append(pair['antigen_name'])
+            if antigen_name not in self.agnameseq:
+                self.agnameseq[antigen_name] = ag
+
+
+def get_negative_pairs(vocab, antibody):
+    # all antigens
+    candidate_antigens = set(vocab.agnameseq.keys())
+    candidate_antigens -= set(vocab.abagname[antibody])
+    antibody_sequences = []
+    antigen_sequences = []
+    labels = []
+    for i in range(len(vocab.abagseq[antibody])):
+        choice = random.choice(list(candidate_antigens))
+        print(choice)
+        candidate_antigens.remove(choice)
+        ag = vocab.agnameseq[choice]
+        antibody_sequences.append(vocab.make_embeddings(antibody))
+        antigen_sequences.append(vocab.make_embeddings(ag))
+        labels.append(0)
+    
+    return antibody_sequences, antigen_sequences, labels
+
+def make_dataset(vocab, antibodies):
+    antibody_sequences = []
+    antigen_sequences = []
+    labels = []
+    for ab in antibodies:
+        # make true pairs
+        for ag in vocab.abagseq[ab]:
+            antibody_sequences.append(vocab.make_embeddings(ab))
+            antigen_sequences.append(vocab.make_embeddings(ag))
+            labels.append(1)
+        print(vocab.abagname[ab])
+        #make negative_pairs
+        negative_antibodies, negative_antigens, negative_labels = get_negative_pairs(vocab, ab)
+        antibody_sequences.extend(negative_antibodies)
+        antigen_sequences.extend(negative_antigens)
+        labels.extend(negative_labels)
+    return antibody_sequences, antigen_sequences, labels
         
-        return antibodies, antigens, antigen_names
         
 
+def split_train_test(vocab):
+    keys = list(vocab.abagseq.keys())
+    random.shuffle(keys)
+    train_antibodies = keys[:int(0.8*len(keys))]
+    test_antibodies = keys[int(0.8*len(keys)):]
+    train_antibodies, train_antigens, train_labels = make_dataset(vocab, train_antibodies)
+    test_antibodies, test_antigens, test_labels = make_dataset(vocab, test_antibodies)
+    return train_antibodies, train_antigens, train_labels, test_antibodies, test_antigens, test_labels
+    
 
 def preprocess():
     data = pd.read_csv("new_SaDDAb_antibody_antigen_pairs.tsv", sep='\t')
-    all_antigen_names = set(data['antigen_name'])
-    data = data[['Hchain_3_letter_seq', 'Lchain_3_letter_seq', 'antigen_chain_3_letter_seq', 'antigen_name']]
-    data['antibody_chain'] = data['Hchain_3_letter_seq'] + ' SEP '+ data['Lchain_3_letter_seq']
-    data['antigen_chain'] = data['antigen_chain_3_letter_seq']
+    data = data[['Hchain_1_letter_seq', 'Lchain_1_letter_seq', 'antigen_chain_1_letter_seq', 'antigen_name']]
+    data['antibody_chain'] = data['Hchain_1_letter_seq'] + '~'+ data['Lchain_1_letter_seq']
+    data['antigen_chain'] = data['antigen_chain_1_letter_seq']
     train_data = data[['antibody_chain', 'antigen_chain', 'antigen_name']]
     train_data = train_data.dropna()
     vocab = Vocab()
-    antibody_sequences, antigen_sequences, antigen_names = vocab.make_vocab(train_data)
-    print(len(antibody_sequences), len(antigen_sequences))
+    vocab.make_vocab(train_data)
+    return vocab
     
-    dataset = pd.DataFrame()
-    dataset['antibody_sequence'] = pd.Series(antibody_sequences)
-    dataset['antigen_sequence'] = pd.Series(antigen_sequences)
-    dataset['antigen_names'] = pd.Series(antigen_names)
-
-
-    return vocab.vocab, antibody_sequences, antigen_sequences, data
-
-# dictionary : (Hchain1letter, Lchain1letter) -> antibody sequence
-# dictionary : (Hchain1letter, Lchain1letter) -> antigens names it binds to 
-# dictionary : antigename => one antigen sequence
-# dictionary : antigen 1letter seq -> antigenname
-# for every pair (Hchain1letter, Lchain1letter), (antigen1letterseq)
-# Make True Pair: get their sequences make a true pair
-# I don't know how to make false pairs
-
-def generate_false_pairs(antibodies, antigens, all_antigen_names):    
-    # take a pair
-    # randomly select another antigen 
-    sys.exit()
-
-def split_train_test(antibodies, antigens, all_antigen_names):
-    train_antibodies = antibodies[:int(0.8*len(antibodies))]
-    test_antibodies = antibodies[int(0.8*len(antibodies)):]
-    train_antigens = antigens[:int(0.8*len(antigens))]
-    test_antigens = antigens[int(0.8*len(antigens)):]
-
-    false_train_antibodies, false_train_antigens = generate_false_pairs(train_antibodies, train_antigens, all_antigen_names)
-    final_train_antibodies = train_antibodies + false_train_antibodies
-    final_train_antigens = train_antigens + false_train_antigens
-    
-    false_test_antibodies, false_test_antigens = generate_false_pairs(test_antibodies, test_antigens, all_antigen_names )
-    final_test_antibodies = test_antibodies + false_test_antibodies
-    final_test_antigens = test_antigens + false_test_antigens
-
-    train_labels = [1]*(len(train_antibodies)) + [-1]*len(false_train_antibodies)
-    test_labels = [1]*len(test_antibodies) + [-1]*len(false_test_antibodies)
-
-    print(len(train_labels), len(train_antibodies))
-    print(len(test_labels), len(test_antibodies))
-    return final_train_antibodies, final_train_antigens, train_labels, final_test_antibodies, final_test_antigens, test_labels
-
 
 if __name__ == '__main__':
     preprocess()
