@@ -17,12 +17,14 @@ class Encoder(nn.Module):
 class SiameseNetwork(nn.Module):
     def __init__(self, ntokens, emsize, nhead, d_hid, nlayers, dropout):
         super(SiameseNetwork, self).__init__()
-        self.encoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
+        self.AbEncoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
+        # self.AgEncoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
+        
     def forward(self, x1, x2):
         x1 = torch.LongTensor(x1).unsqueeze(axis = 1)
         x2 = torch.LongTensor(x2).unsqueeze(axis = 1)
-        h1 = self.encoder(x1)
-        h2 = self.encoder(x2)
+        h1 = self.AbEncoder(x1)
+        h2 = self.AbEncoder(x2)
         h1 = torch.squeeze(h1, axis = 1)
         h2 = torch.squeeze(h2, axis = 1)
         h1 = torch.mean(h1, axis = 0)
@@ -46,7 +48,7 @@ model = TransformerModel(ntokens, emsize, nhead, d_hid, nlayers, dropout)
 net = SiameseNetwork(ntokens, emsize, nhead, d_hid, nlayers, dropout)
 criterion = nn.CosineEmbeddingLoss()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
-num_epochs = 10
+num_epochs = 10   
 # train the network
 train_antibodies, train_antigens, train_labels, test_antibodies, test_antigens, test_labels = split_train_test(vocab)
 counter = 0
@@ -68,6 +70,7 @@ for ab, ad in zip(train_antibodies, train_antigens):
     similarities.append(similarity)
 
 f, t, auc = eval(train_labels, similarities)
+roc_plot(f, t, auc)
 print("Train auc: ", auc)
 # true pairs
 similarities = []

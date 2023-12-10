@@ -52,7 +52,6 @@ def get_negative_pairs(vocab, antibody):
     labels = []
     for i in range(len(vocab.abagseq[antibody])):
         choice = random.choice(list(candidate_antigens))
-        print(choice)
         candidate_antigens.remove(choice)
         ag = vocab.agnameseq[choice]
         antibody_sequences.append(vocab.make_embeddings(antibody))
@@ -71,7 +70,6 @@ def make_dataset(vocab, antibodies):
             antibody_sequences.append(vocab.make_embeddings(ab))
             antigen_sequences.append(vocab.make_embeddings(ag))
             labels.append(1)
-        print(vocab.abagname[ab])
         #make negative_pairs
         negative_antibodies, negative_antigens, negative_labels = get_negative_pairs(vocab, ab)
         antibody_sequences.extend(negative_antibodies)
