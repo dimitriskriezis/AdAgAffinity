@@ -18,13 +18,13 @@ class SiameseNetwork(nn.Module):
     def __init__(self, ntokens, emsize, nhead, d_hid, nlayers, dropout):
         super(SiameseNetwork, self).__init__()
         self.AbEncoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
-        # self.AgEncoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
+        self.AgEncoder = Encoder(ntokens, emsize, nhead, d_hid, nlayers, dropout)
         
     def forward(self, x1, x2):
         x1 = torch.LongTensor(x1).unsqueeze(axis = 1)
         x2 = torch.LongTensor(x2).unsqueeze(axis = 1)
         h1 = self.AbEncoder(x1)
-        h2 = self.AbEncoder(x2)
+        h2 = self.AgEncoder(x2)
         h1 = torch.squeeze(h1, axis = 1)
         h2 = torch.squeeze(h2, axis = 1)
         h1 = torch.mean(h1, axis = 0)
@@ -83,3 +83,4 @@ for ab, ad in zip(test_antibodies, test_antigens):
 
 f, t, auc = eval(test_labels, similarities)
 print("Test auc: ", auc)
+roc_plot(f, t, auc)

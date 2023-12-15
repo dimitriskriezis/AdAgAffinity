@@ -92,7 +92,7 @@ def split_train_test(vocab):
 def preprocess():
     data = pd.read_csv("new_SaDDAb_antibody_antigen_pairs.tsv", sep='\t')
     data = data[['Hchain_1_letter_seq', 'Lchain_1_letter_seq', 'antigen_chain_1_letter_seq', 'antigen_name']]
-    data['antibody_chain'] = data['Hchain_1_letter_seq'] + '~'+ data['Lchain_1_letter_seq']
+    data['antibody_chain'] = data['Hchain_1_letter_seq']
     data['antigen_chain'] = data['antigen_chain_1_letter_seq']
     train_data = data[['antibody_chain', 'antigen_chain', 'antigen_name']]
     train_data = train_data.dropna()
@@ -103,3 +103,10 @@ def preprocess():
 
 if __name__ == '__main__':
     preprocess()
+
+    vocab = preprocess()
+    print(vocab.vocab)
+    train_antibodies, train_antigens, train_labels, test_antibodies, test_antigens, test_labels = split_train_test(vocab)
+    print(train_antibodies[0])
+    print(train_antigens[0])
+    

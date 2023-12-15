@@ -40,7 +40,7 @@ class TransformerModel(nn.Module):
         src = self.embedding(src) * math.sqrt(self.d_model)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src, src_mask)
-        output = self.linear(output)
+        # output = self.linear(output)
         return output
     
 
